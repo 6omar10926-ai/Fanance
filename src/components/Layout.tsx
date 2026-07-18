@@ -20,7 +20,7 @@ const navItems = [
 ]
 
 export default function Layout() {
-  const { user, signOut } = useAuth()
+  const { signOut } = useAuth()
 
   return (
     <div className="min-h-screen flex bg-[#0b0f19]">
@@ -60,21 +60,13 @@ export default function Layout() {
             <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-500" />
             بياناتك محفوظة بأمان في حسابك، ومتزامنة تلقائياً بين أجهزتك.
           </div>
-          <div className="flex items-center gap-2 px-1">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-slate-300 truncate" title={user?.email ?? ''}>
-                {user?.email}
-              </p>
-            </div>
-            <button
-              onClick={() => signOut()}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors shrink-0"
-              aria-label="تسجيل الخروج"
-              title="تسجيل الخروج"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            onClick={() => signOut()}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors text-sm font-medium"
+          >
+            <LogOut className="w-4 h-4" />
+            تسجيل الخروج
+          </button>
         </div>
       </aside>
 

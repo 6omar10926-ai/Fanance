@@ -1,32 +1,69 @@
 import { useState } from 'react'
-import { Coins, Loader2 } from 'lucide-react'
+import { Coins, Loader2, KeyRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { authErrorMessage } from '../lib/authErrors'
-import { FormField, TextInput, PrimaryButton } from '../components/FormField'
+import { pinErrorMessage } from '../lib/authErrors'
+import { PIN_ACCOUNT_EMAIL } from '../lib/firebase'
+import { PrimaryButton } from '../components/FormField'
+
+const PIN_LENGTH = 6
+
+function PinInput({ value, onChange, autoFocus }: { value: string; onChange: (v: string) => void; autoFocus?: boolean }) {
+  return (
+    <input
+      type="password"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      autoFocus={autoFocus}
+      autoComplete="off"
+      maxLength={PIN_LENGTH}
+      value={value}
+      onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH))}
+      placeholder="••••••"
+      className="w-full text-center text-3xl font-black tracking-[0.5em] rounded-xl bg-white/5 border border-white/10 py-4 px-3 text-white placeholder:text-slate-600 outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/40 transition-colors tabular-nums"
+    />
+  )
+}
 
 export default function Login() {
   const { signIn, signUp } = useAuth()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [pin, setPin] = useState('')
+  const [confirmPin, setConfirmPin] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (pin.length !== PIN_LENGTH) {
+      setError(`الرمز لازم يكون ${PIN_LENGTH} أرقام`)
+      return
+    }
+    if (mode === 'signup' && pin !== confirmPin) {
+      setError('الرمزان غير متطابقين')
+      return
+    }
+
     setLoading(true)
     try {
       if (mode === 'login') {
-        await signIn(email, password)
+        await signIn(PIN_ACCOUNT_EMAIL, pin)
       } else {
-        await signUp(email, password)
+        await signUp(PIN_ACCOUNT_EMAIL, pin)
       }
     } catch (err) {
-      setError(authErrorMessage(err))
+      setError(pinErrorMessage(err))
     } finally {
       setLoading(false)
     }
+  }
+
+  function switchMode(next: 'login' | 'signup') {
+    setMode(next)
+    setError('')
+    setPin('')
+    setConfirmPin('')
   }
 
   return (
@@ -46,49 +83,45 @@ export default function Login() {
           <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 mb-6">
             <button
               type="button"
-              onClick={() => setMode('login')}
+              onClick={() => switchMode('login')}
               className={`flex-1 py-2 rounded-md text-sm font-semibold transition-colors ${
                 mode === 'login' ? 'bg-emerald-500 text-[#06110c]' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              تسجيل الدخول
+              أدخل الرمز
             </button>
             <button
               type="button"
-              onClick={() => setMode('signup')}
+              onClick={() => switchMode('signup')}
               className={`flex-1 py-2 rounded-md text-sm font-semibold transition-colors ${
                 mode === 'signup' ? 'bg-emerald-500 text-[#06110c]' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              إنشاء حساب
+              أول مرة، أنشئ رمز
             </button>
           </div>
 
           <form onSubmit={handleSubmit}>
-            <FormField label="البريد الإلكتروني">
-              <TextInput
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-                required
-              />
-            </FormField>
-            <FormField label="كلمة المرور">
-              <TextInput
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                minLength={6}
-                required
-              />
-            </FormField>
+            <div className="flex items-center justify-center gap-1.5 text-slate-400 text-xs mb-3">
+              <KeyRound className="w-3.5 h-3.5" />
+              {mode === 'login' ? 'أدخل رمزك المكوّن من 6 أرقام' : 'اختر رمزاً من 6 أرقام تتذكّره'}
+            </div>
+
+            <div className="mb-4">
+              <PinInput value={pin} onChange={setPin} autoFocus />
+            </div>
+
+            {mode === 'signup' && (
+              <div className="mb-4">
+                <p className="text-[11px] text-slate-500 mb-1.5 text-center">تأكيد الرمز</p>
+                <PinInput value={confirmPin} onChange={setConfirmPin} />
+              </div>
+            )}
 
             {error && (
-              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2 mb-4">{error}</p>
+              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2 mb-4 text-center">
+                {error}
+              </p>
             )}
 
             <PrimaryButton type="submit" disabled={loading}>
@@ -97,15 +130,19 @@ export default function Login() {
                   <Loader2 className="w-4 h-4 animate-spin" /> جارٍ التنفيذ...
                 </span>
               ) : mode === 'login' ? (
-                'تسجيل الدخول'
+                'دخول'
               ) : (
-                'إنشاء الحساب'
+                'إنشاء الرمز والدخول'
               )}
             </PrimaryButton>
           </form>
         </div>
 
-        <p className="text-[11px] text-slate-600 text-center mt-6">بياناتك محفوظة بأمان ومرتبطة بحسابك فقط</p>
+        <p className="text-[11px] text-slate-600 text-center mt-6">
+          {mode === 'signup'
+            ? 'احفظ رمزك جيداً — ما فيه بريد إلكتروني لاسترجاعه إذا نسيته'
+            : 'بياناتك محفوظة بأمان ومرتبطة برمزك فقط'}
+        </p>
       </div>
     </div>
   )

@@ -16,3 +16,19 @@ export function authErrorMessage(err: unknown): string {
   if (code && messages[code]) return messages[code]
   return 'حدث خطأ غير متوقع، حاول مرة أخرى'
 }
+
+const pinMessages: Record<string, string> = {
+  'auth/wrong-password': 'الرمز غير صحيح',
+  'auth/invalid-credential': 'الرمز غير صحيح',
+  'auth/user-not-found': 'الرمز غير صحيح',
+  'auth/email-already-in-use': 'هذا الرمز غير متاح، جرّب رمزاً آخر',
+  'auth/too-many-requests': 'محاولات كثيرة، حاول مرة أخرى بعد قليل',
+  'auth/network-request-failed': 'تعذر الاتصال بالخادم، تحقق من الإنترنت',
+  'auth/configuration-not-found': 'إعدادات تسجيل الدخول غير مكتملة بعد',
+}
+
+export function pinErrorMessage(err: unknown): string {
+  const code = (err as { code?: string })?.code
+  if (code && pinMessages[code]) return pinMessages[code]
+  return 'حدث خطأ غير متوقع، حاول مرة أخرى'
+}

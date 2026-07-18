@@ -16,3 +16,6 @@ export const firebaseApp = initializeApp(firebaseConfig)
 export const auth = getAuth(firebaseApp)
 export const db = getFirestore(firebaseApp)
 export const isFirebaseConfigured = true
+
+// حساب داخلي ثابت يُستخدم مع تسجيل الدخول بالرمز (PIN) بدلاً من بريد إلكتروني حقيقي
+export const PIN_ACCOUNT_EMAIL = 'owner@fanance-pin.app'
