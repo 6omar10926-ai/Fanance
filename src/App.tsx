@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import { DataProvider } from './context/DataContext'
 import Dashboard from './pages/Dashboard'
@@ -10,7 +10,7 @@ import Payments from './pages/Payments'
 function App() {
   return (
     <DataProvider>
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Dashboard />} />
@@ -20,7 +20,7 @@ function App() {
             <Route path="payments" element={<Payments />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </DataProvider>
   )
 }
