@@ -1,21 +1,31 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { Expense, FinanceData, Investment, IncomeEntry, Payment } from '../types'
+import {
+  collection,
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  doc,
+  onSnapshot,
+  writeBatch,
+  getDocs,
+} from 'firebase/firestore'
+import { db } from '../lib/firebase'
+import { useAuth } from './AuthContext'
+import type { Expense, Investment, IncomeEntry, Payment, FinanceData } from '../types'
 import { seedData } from '../lib/seed'
 
-const STORAGE_KEY = 'fanance-data-v1'
+function useUserCollection<T extends { id: string }>(uid: string, name: string): T[] {
+  const [items, setItems] = useState<T[]>([])
 
-function loadData(): FinanceData {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw) as FinanceData
-  } catch {
-    // ignore corrupted storage
-  }
-  return seedData
-}
+  useEffect(() => {
+    const ref = collection(db, 'users', uid, name)
+    const unsubscribe = onSnapshot(ref, (snap) => {
+      setItems(snap.docs.map((d) => ({ ...(d.data() as Omit<T, 'id'>), id: d.id })) as T[])
+    })
+    return unsubscribe
+  }, [uid, name])
 
-function genId(): string {
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
+  return items
 }
 
 interface DataContextValue extends FinanceData {
@@ -28,36 +38,71 @@ interface DataContextValue extends FinanceData {
   addPayment: (p: Omit<Payment, 'id'>) => void
   removePayment: (id: string) => void
   updatePaymentStatus: (id: string, status: Payment['status']) => void
-  resetToSampleData: () => void
-  clearAllData: () => void
+  loadSampleData: () => Promise<void>
+  clearAllData: () => Promise<void>
 }
 
 const DataContext = createContext<DataContextValue | null>(null)
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<FinanceData>(loadData)
+  const { user } = useAuth()
+  const uid = user!.uid
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-  }, [data])
+  const expenses = useUserCollection<Expense>(uid, 'expenses')
+  const investments = useUserCollection<Investment>(uid, 'investments')
+  const incomes = useUserCollection<IncomeEntry>(uid, 'incomes')
+  const payments = useUserCollection<Payment>(uid, 'payments')
+
+  async function loadSampleData() {
+    const batch = writeBatch(db)
+    for (const e of seedData.expenses) {
+      const { id, ...rest } = e
+      void id
+      batch.set(doc(collection(db, 'users', uid, 'expenses')), rest)
+    }
+    for (const i of seedData.investments) {
+      const { id, ...rest } = i
+      void id
+      batch.set(doc(collection(db, 'users', uid, 'investments')), rest)
+    }
+    for (const n of seedData.incomes) {
+      const { id, ...rest } = n
+      void id
+      batch.set(doc(collection(db, 'users', uid, 'incomes')), rest)
+    }
+    for (const p of seedData.payments) {
+      const { id, ...rest } = p
+      void id
+      batch.set(doc(collection(db, 'users', uid, 'payments')), rest)
+    }
+    await batch.commit()
+  }
+
+  async function clearAllData() {
+    const batch = writeBatch(db)
+    for (const name of ['expenses', 'investments', 'incomes', 'payments']) {
+      const snap = await getDocs(collection(db, 'users', uid, name))
+      snap.forEach((d) => batch.delete(d.ref))
+    }
+    await batch.commit()
+  }
 
   const value: DataContextValue = {
-    ...data,
-    addExpense: (e) => setData((d) => ({ ...d, expenses: [{ ...e, id: genId() }, ...d.expenses] })),
-    removeExpense: (id) => setData((d) => ({ ...d, expenses: d.expenses.filter((x) => x.id !== id) })),
-    addInvestment: (i) => setData((d) => ({ ...d, investments: [{ ...i, id: genId() }, ...d.investments] })),
-    removeInvestment: (id) => setData((d) => ({ ...d, investments: d.investments.filter((x) => x.id !== id) })),
-    addIncome: (i) => setData((d) => ({ ...d, incomes: [{ ...i, id: genId() }, ...d.incomes] })),
-    removeIncome: (id) => setData((d) => ({ ...d, incomes: d.incomes.filter((x) => x.id !== id) })),
-    addPayment: (p) => setData((d) => ({ ...d, payments: [{ ...p, id: genId() }, ...d.payments] })),
-    removePayment: (id) => setData((d) => ({ ...d, payments: d.payments.filter((x) => x.id !== id) })),
-    updatePaymentStatus: (id, status) =>
-      setData((d) => ({
-        ...d,
-        payments: d.payments.map((p) => (p.id === id ? { ...p, status } : p)),
-      })),
-    resetToSampleData: () => setData(seedData),
-    clearAllData: () => setData({ expenses: [], investments: [], incomes: [], payments: [] }),
+    expenses,
+    investments,
+    incomes,
+    payments,
+    addExpense: (e) => void addDoc(collection(db, 'users', uid, 'expenses'), e),
+    removeExpense: (id) => void deleteDoc(doc(db, 'users', uid, 'expenses', id)),
+    addInvestment: (i) => void addDoc(collection(db, 'users', uid, 'investments'), i),
+    removeInvestment: (id) => void deleteDoc(doc(db, 'users', uid, 'investments', id)),
+    addIncome: (i) => void addDoc(collection(db, 'users', uid, 'incomes'), i),
+    removeIncome: (id) => void deleteDoc(doc(db, 'users', uid, 'incomes', id)),
+    addPayment: (p) => void addDoc(collection(db, 'users', uid, 'payments'), p),
+    removePayment: (id) => void deleteDoc(doc(db, 'users', uid, 'payments', id)),
+    updatePaymentStatus: (id, status) => void updateDoc(doc(db, 'users', uid, 'payments', id), { status }),
+    loadSampleData,
+    clearAllData,
   }
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

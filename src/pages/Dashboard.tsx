@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ResponsiveContainer,
@@ -12,7 +13,7 @@ import {
   Cell,
   Legend,
 } from 'recharts'
-import { Wallet, TrendingUp, Banknote, PiggyBank, AlertTriangle, ArrowLeft } from 'lucide-react'
+import { Wallet, TrendingUp, Banknote, PiggyBank, AlertTriangle, ArrowLeft, Sparkles, Loader2 } from 'lucide-react'
 import { useFinanceData } from '../context/DataContext'
 import StatCard from '../components/StatCard'
 import Card from '../components/Card'
@@ -58,6 +59,19 @@ function RatioBar({ label, value, suffix = '%', color = 'bg-emerald-500' }: { la
 export default function Dashboard() {
   const data = useFinanceData()
   const now = new Date()
+  const [seeding, setSeeding] = useState(false)
+
+  const isEmpty =
+    data.expenses.length === 0 && data.investments.length === 0 && data.incomes.length === 0 && data.payments.length === 0
+
+  async function handleLoadSample() {
+    setSeeding(true)
+    try {
+      await data.loadSampleData()
+    } finally {
+      setSeeding(false)
+    }
+  }
 
   const monthlyIncome = getMonthlyIncome(data.incomes)
   const annualIncome = getAnnualIncome(data.incomes)
@@ -87,6 +101,28 @@ export default function Dashboard() {
         title="لوحة التحكم المالية"
         subtitle={`نظرة عامة على وضعك المالي · ${now.toLocaleDateString('ar-SA-u-ca-gregory', { year: 'numeric', month: 'long', day: 'numeric' })}`}
       />
+
+      {isEmpty && (
+        <Card className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">حسابك فاضي حالياً</p>
+              <p className="text-xs text-slate-400 mt-0.5">ابدأ بإضافة بياناتك، أو جرّب التطبيق ببيانات تجريبية أولاً</p>
+            </div>
+          </div>
+          <button
+            onClick={handleLoadSample}
+            disabled={seeding}
+            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-[#06110c] font-bold px-4 py-2.5 rounded-xl text-sm transition-colors shrink-0"
+          >
+            {seeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            تحميل بيانات تجريبية
+          </button>
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard label="الدخل الشهري" value={formatCurrency(monthlyIncome)} icon={Banknote} accent="emerald" sub={`سنوياً ${formatCurrency(annualIncome)}`} />

@@ -8,7 +8,7 @@
 - **الدخل**: تسجيل مصادر الدخل الشهرية والسنوية والمرة الواحدة، مع احتساب الدخل الشهري الثابت والسنوي المتوقع.
 - **المدفوعات**: متابعة الفواتير والالتزامات المالية مع حالتها (مستحقة، مدفوعة، متأخرة) ودعم الدفعات المتكررة.
 
-جميع البيانات تُخزَّن محلياً في متصفحك (localStorage) ولا تُرسل لأي خادم.
+تسجيل الدخول بالبريد الإلكتروني وكلمة المرور، وبياناتك تُخزَّن في Firestore ومرتبطة بحسابك، فتصلك من أي جهاز.
 
 ## التقنيات
 
@@ -16,6 +16,27 @@
 - Tailwind CSS v4
 - Recharts للرسوم البيانية
 - React Router
+- Firebase (Authentication + Firestore)
+
+## إعداد Firebase (مطلوب قبل أول تشغيل)
+
+1. أنشئ مشروعاً على [Firebase Console](https://console.firebase.google.com).
+2. فعّل **Authentication → Email/Password**.
+3. أنشئ **Firestore Database**.
+4. أضف تطبيق ويب من إعدادات المشروع وانسخ كائن `firebaseConfig`.
+5. ألصقه في `src/lib/firebase.ts` بدلاً من قيم `REPLACE_ME`.
+6. في **Firestore → Rules** استخدم:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
 
 ## التشغيل
 
