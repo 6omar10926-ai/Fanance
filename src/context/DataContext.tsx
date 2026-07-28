@@ -34,6 +34,7 @@ interface DataContextValue extends FinanceData {
   addInvestment: (i: Omit<Investment, 'id'>) => void
   removeInvestment: (id: string) => void
   addIncome: (i: Omit<IncomeEntry, 'id'>) => void
+  updateIncome: (id: string, i: Omit<IncomeEntry, 'id'>) => void
   removeIncome: (id: string) => void
   addPayment: (p: Omit<Payment, 'id'>) => void
   removePayment: (id: string) => void
@@ -97,6 +98,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     addInvestment: (i) => void addDoc(collection(db, 'users', uid, 'investments'), i),
     removeInvestment: (id) => void deleteDoc(doc(db, 'users', uid, 'investments', id)),
     addIncome: (i) => void addDoc(collection(db, 'users', uid, 'incomes'), i),
+    updateIncome: (id, i) => void updateDoc(doc(db, 'users', uid, 'incomes', id), i),
     removeIncome: (id) => void deleteDoc(doc(db, 'users', uid, 'incomes', id)),
     addPayment: (p) => void addDoc(collection(db, 'users', uid, 'payments'), p),
     removePayment: (id) => void deleteDoc(doc(db, 'users', uid, 'payments', id)),

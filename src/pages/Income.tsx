@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, Banknote, CalendarDays, CalendarRange, Sparkles, Timer } from 'lucide-react'
+import { Plus, Trash2, Pencil, Banknote, CalendarDays, CalendarRange, Sparkles, Timer } from 'lucide-react'
 import { useFinanceData } from '../context/DataContext'
 import type { IncomeEntry, IncomeFrequency } from '../types'
 import PageHeader from '../components/PageHeader'
@@ -19,16 +19,36 @@ const freqBadge: Record<IncomeFrequency, string> = {
 }
 
 export default function Income() {
-  const { incomes, addIncome, removeIncome } = useFinanceData()
+  const { incomes, addIncome, updateIncome, removeIncome } = useFinanceData()
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
-  const [form, setForm] = useState({
+  const emptyForm = {
     source: '',
     frequency: frequencies[0] as IncomeFrequency,
     amount: '',
     date: todayISO(),
     payDay: String(new Date().getDate()),
-  })
+  }
+  const [form, setForm] = useState(emptyForm)
+
+  function openAdd() {
+    setEditingId(null)
+    setForm(emptyForm)
+    setOpen(true)
+  }
+
+  function openEdit(entry: IncomeEntry) {
+    setEditingId(entry.id)
+    setForm({
+      source: entry.source,
+      frequency: entry.frequency,
+      amount: String(entry.amount),
+      date: entry.date,
+      payDay: String(entry.payDay ?? new Date(entry.date).getDate()),
+    })
+    setOpen(true)
+  }
 
   const monthly = getMonthlyIncome(incomes)
   const annual = getAnnualIncome(incomes)
@@ -49,8 +69,13 @@ export default function Income() {
       const day = Math.min(31, Math.max(1, Number(form.payDay) || 1))
       payload.payDay = day
     }
-    addIncome(payload)
-    setForm({ source: '', frequency: frequencies[0], amount: '', date: todayISO(), payDay: String(new Date().getDate()) })
+    if (editingId) {
+      updateIncome(editingId, payload)
+    } else {
+      addIncome(payload)
+    }
+    setForm(emptyForm)
+    setEditingId(null)
     setOpen(false)
   }
 
@@ -63,7 +88,7 @@ export default function Income() {
         subtitle="سجّل مصادر دخلك الشهرية والسنوية"
         action={
           <button
-            onClick={() => setOpen(true)}
+            onClick={openAdd}
             className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-[#06110c] font-bold px-4 py-2.5 rounded-xl text-sm transition-colors"
           >
             <Plus className="w-4 h-4" /> إضافة دخل
@@ -112,8 +137,15 @@ export default function Income() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <p className="text-sm font-bold text-emerald-400 tabular-nums">+{formatCurrency(i.amount)}</p>
+                <div className="flex items-center gap-1 shrink-0">
+                  <p className="text-sm font-bold text-emerald-400 tabular-nums ml-1">+{formatCurrency(i.amount)}</p>
+                  <button
+                    onClick={() => openEdit(i)}
+                    className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-sky-400 hover:bg-sky-500/10 transition-all"
+                    aria-label="تعديل"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => removeIncome(i.id)}
                     className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
@@ -129,7 +161,7 @@ export default function Income() {
         )}
       </Card>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="إضافة مصدر دخل">
+      <Modal open={open} onClose={() => setOpen(false)} title={editingId ? 'تعديل مصدر الدخل' : 'إضافة مصدر دخل'}>
         <form onSubmit={handleSubmit}>
           <FormField label="مصدر الدخل">
             <TextInput
@@ -174,7 +206,7 @@ export default function Income() {
               <TextInput type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} required />
             </FormField>
           )}
-          <PrimaryButton type="submit">إضافة الدخل</PrimaryButton>
+          <PrimaryButton type="submit">{editingId ? 'حفظ التعديل' : 'إضافة الدخل'}</PrimaryButton>
         </form>
       </Modal>
     </div>
