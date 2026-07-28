@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - claude/financial-app-l1t6nn
+      - claude/dashboard-link-hvu0n0
       - main
   workflow_dispatch:
 
@@ -30,6 +31,8 @@ jobs:
         env:
           GH_PAGES: 'true'
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

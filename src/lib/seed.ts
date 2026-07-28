@@ -23,9 +23,10 @@ export const seedData: FinanceData = {
     { id: 'i4', name: 'وديعة ثابتة', type: 'ودائع بنكية', amountInvested: 20000, currentValue: 20600, date: daysAgoISO(365) },
   ],
   incomes: [
-    { id: 'n1', date: daysAgoISO(3), source: 'الراتب الأساسي', frequency: 'شهري', amount: 12000 },
-    { id: 'n2', date: daysAgoISO(3), source: 'عمل حر', frequency: 'شهري', amount: 1500 },
+    { id: 'n1', date: daysAgoISO(3), source: 'الراتب الأساسي', frequency: 'شهري', amount: 12000, payDay: 27 },
+    { id: 'n2', date: daysAgoISO(3), source: 'عمل حر', frequency: 'شهري', amount: 1500, payDay: 5 },
     { id: 'n3', date: daysAgoISO(90), source: 'مكافأة سنوية', frequency: 'سنوي', amount: 8000 },
+    { id: 'n4', date: daysAgoISO(-20), source: 'صفقة بيع سيارة', frequency: 'مرة واحدة', amount: 35000 },
   ],
   payments: [
     { id: 'p1', name: 'إيجار الشقة', amount: 2500, dueDate: daysAgoISO(-5), status: 'مستحق', recurring: true, category: 'سكن' },

@@ -30,3 +30,13 @@ export function formatDate(iso: string): string {
 export function todayISO(): string {
   return new Date().toISOString().slice(0, 10)
 }
+
+// Arabic-friendly countdown label for the number of days until an event.
+export function countdownLabel(days: number): string {
+  if (days < 0) return 'مضى موعده'
+  if (days === 0) return 'ينزل اليوم'
+  if (days === 1) return 'غداً'
+  if (days === 2) return 'بعد يومين'
+  if (days <= 10) return `بعد ${formatNumber(days)} أيام`
+  return `بعد ${formatNumber(days)} يوماً`
+}

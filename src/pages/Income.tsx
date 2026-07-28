@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, Banknote, CalendarDays, CalendarRange, Sparkles } from 'lucide-react'
+import { Plus, Trash2, Banknote, CalendarDays, CalendarRange, Sparkles, Timer } from 'lucide-react'
 import { useFinanceData } from '../context/DataContext'
 import type { IncomeEntry, IncomeFrequency } from '../types'
 import PageHeader from '../components/PageHeader'
@@ -7,8 +7,8 @@ import Card from '../components/Card'
 import StatCard from '../components/StatCard'
 import Modal from '../components/Modal'
 import { FormField, TextInput, Select, PrimaryButton } from '../components/FormField'
-import { formatCurrency, formatDate, todayISO } from '../lib/format'
-import { getMonthlyIncome, getAnnualIncome } from '../lib/calculations'
+import { formatCurrency, formatDate, todayISO, countdownLabel } from '../lib/format'
+import { getMonthlyIncome, getAnnualIncome, nextIncomeDate, daysUntil } from '../lib/calculations'
 
 const frequencies: IncomeFrequency[] = ['شهري', 'سنوي', 'مرة واحدة']
 
@@ -27,6 +27,7 @@ export default function Income() {
     frequency: frequencies[0] as IncomeFrequency,
     amount: '',
     date: todayISO(),
+    payDay: String(new Date().getDate()),
   })
 
   const monthly = getMonthlyIncome(incomes)
@@ -44,8 +45,12 @@ export default function Income() {
       amount,
       date: form.date,
     }
+    if (form.frequency === 'شهري') {
+      const day = Math.min(31, Math.max(1, Number(form.payDay) || 1))
+      payload.payDay = day
+    }
     addIncome(payload)
-    setForm({ source: '', frequency: frequencies[0], amount: '', date: todayISO() })
+    setForm({ source: '', frequency: frequencies[0], amount: '', date: todayISO(), payDay: String(new Date().getDate()) })
     setOpen(false)
   }
 
@@ -79,16 +84,33 @@ export default function Income() {
           <p className="text-sm text-slate-500 text-center py-12">لا توجد مصادر دخل مسجلة بعد</p>
         ) : (
           <div className="space-y-2">
-            {sorted.map((i) => (
+            {sorted.map((i) => {
+              const next = nextIncomeDate(i)
+              const days = next ? daysUntil(next) : null
+              return (
               <div key={i.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 group">
                 <div className="flex items-center gap-3 min-w-0">
                   <span className={`shrink-0 text-[11px] font-semibold px-2 py-1 rounded-lg ${freqBadge[i.frequency]}`}>{i.frequency}</span>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-white truncate">{i.source}</p>
-                    <p className="text-[11px] text-slate-500">{formatDate(i.date)}</p>
+                    <p className="text-[11px] text-slate-500">
+                      {i.frequency === 'شهري' && i.payDay
+                        ? `يوم ${i.payDay} من كل شهر`
+                        : formatDate(i.date)}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
+                  {days !== null && next && (
+                    <span
+                      className={`hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg ${
+                        days === 0 ? 'bg-amber-500/15 text-amber-400' : 'bg-white/5 text-slate-300'
+                      }`}
+                      title={formatDate(next.toISOString())}
+                    >
+                      <Timer className="w-3 h-3" /> {countdownLabel(days)}
+                    </span>
+                  )}
                   <p className="text-sm font-bold text-emerald-400 tabular-nums">+{formatCurrency(i.amount)}</p>
                   <button
                     onClick={() => removeIncome(i.id)}
@@ -99,7 +121,8 @@ export default function Income() {
                   </button>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </Card>
@@ -134,9 +157,21 @@ export default function Income() {
               ))}
             </Select>
           </FormField>
-          <FormField label="التاريخ">
-            <TextInput type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} required />
-          </FormField>
+          {form.frequency === 'شهري' ? (
+            <FormField label="يوم النزول من الشهر">
+              <Select value={form.payDay} onChange={(e) => setForm((f) => ({ ...f, payDay: e.target.value }))}>
+                {Array.from({ length: 31 }, (_, k) => k + 1).map((d) => (
+                  <option key={d} value={d}>
+                    يوم {d}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          ) : (
+            <FormField label={form.frequency === 'سنوي' ? 'تاريخ النزول السنوي' : 'التاريخ'}>
+              <TextInput type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} required />
+            </FormField>
+          )}
           <PrimaryButton type="submit">إضافة الدخل</PrimaryButton>
         </form>
       </Modal>

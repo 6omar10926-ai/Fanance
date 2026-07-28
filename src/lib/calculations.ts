@@ -15,6 +15,46 @@ export function totalIncomeRecorded(incomes: IncomeEntry[]): number {
   return incomes.reduce((s, i) => s + i.amount, 0)
 }
 
+// Build a date clamping the day to the last valid day of the month
+// (e.g. day 31 in February becomes the 28th/29th).
+function buildDate(year: number, month: number, day: number): Date {
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  return new Date(year, month, Math.min(day, lastDay))
+}
+
+function dateOnly(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+// Next date this income is expected to land, or null when there is no
+// upcoming occurrence (a past one-time income).
+export function nextIncomeDate(income: IncomeEntry, from: Date = new Date()): Date | null {
+  const today = dateOnly(from)
+  const base = new Date(income.date)
+
+  if (income.frequency === 'شهري') {
+    const day = income.payDay ?? base.getDate()
+    let candidate = buildDate(today.getFullYear(), today.getMonth(), day)
+    if (candidate < today) candidate = buildDate(today.getFullYear(), today.getMonth() + 1, day)
+    return candidate
+  }
+
+  if (income.frequency === 'سنوي') {
+    let candidate = buildDate(today.getFullYear(), base.getMonth(), base.getDate())
+    if (candidate < today) candidate = buildDate(today.getFullYear() + 1, base.getMonth(), base.getDate())
+    return candidate
+  }
+
+  // مرة واحدة: only counts down if it is still in the future
+  const once = dateOnly(base)
+  return once >= today ? once : null
+}
+
+// Whole days from `from` until `date` (0 = today, negative = past).
+export function daysUntil(date: Date, from: Date = new Date()): number {
+  return Math.round((dateOnly(date).getTime() - dateOnly(from).getTime()) / 86400000)
+}
+
 export function totalExpenses(expenses: Expense[]): number {
   return expenses.reduce((s, e) => s + e.amount, 0)
 }

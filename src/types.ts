@@ -40,10 +40,11 @@ export type IncomeFrequency = 'شهري' | 'سنوي' | 'مرة واحدة'
 
 export interface IncomeEntry {
   id: string
-  date: string // ISO date received
+  date: string // ISO date received (or start date)
   source: string
   frequency: IncomeFrequency
   amount: number
+  payDay?: number // day of month (1-31) the income lands, for شهري
 }
 
 export type PaymentStatus = 'مدفوع' | 'مستحق' | 'متأخر'
