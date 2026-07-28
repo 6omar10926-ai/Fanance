@@ -88,33 +88,35 @@ export default function Income() {
               const next = nextIncomeDate(i)
               const days = next ? daysUntil(next) : null
               return (
-              <div key={i.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 group">
+              <div key={i.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/5 group">
                 <div className="flex items-center gap-3 min-w-0">
                   <span className={`shrink-0 text-[11px] font-semibold px-2 py-1 rounded-lg ${freqBadge[i.frequency]}`}>{i.frequency}</span>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-white truncate">{i.source}</p>
-                    <p className="text-[11px] text-slate-500">
-                      {i.frequency === 'شهري' && i.payDay
-                        ? `يوم ${i.payDay} من كل شهر`
-                        : formatDate(i.date)}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
+                      <span className="text-[11px] text-slate-500">
+                        {i.frequency === 'شهري' && i.payDay
+                          ? `يوم ${i.payDay} من كل شهر`
+                          : formatDate(i.date)}
+                      </span>
+                      {days !== null && next && (
+                        <span
+                          className={`inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${
+                            days === 0 ? 'bg-amber-500/15 text-amber-400' : 'bg-emerald-500/10 text-emerald-300'
+                          }`}
+                          title={formatDate(next.toISOString())}
+                        >
+                          <Timer className="w-3 h-3" /> {countdownLabel(days)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  {days !== null && next && (
-                    <span
-                      className={`hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg ${
-                        days === 0 ? 'bg-amber-500/15 text-amber-400' : 'bg-white/5 text-slate-300'
-                      }`}
-                      title={formatDate(next.toISOString())}
-                    >
-                      <Timer className="w-3 h-3" /> {countdownLabel(days)}
-                    </span>
-                  )}
+                <div className="flex items-center gap-2 shrink-0">
                   <p className="text-sm font-bold text-emerald-400 tabular-nums">+{formatCurrency(i.amount)}</p>
                   <button
                     onClick={() => removeIncome(i.id)}
-                    className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                    className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
                     aria-label="حذف"
                   >
                     <Trash2 className="w-4 h-4" />
