@@ -47,6 +47,27 @@ export interface IncomeEntry {
   payDay?: number // day of month (1-31) the income lands, for شهري
 }
 
+// A single deposit logged against an income challenge — each time money
+// actually lands from the challenge's source.
+export interface GoalContribution {
+  id: string
+  date: string // ISO date the amount was received
+  amount: number
+  note?: string
+}
+
+// An income challenge: a target amount to collect from a source within an
+// optional deadline, filled up over time by logging contributions.
+export interface IncomeGoal {
+  id: string
+  title: string
+  source?: string // e.g. عقار، عمل حر
+  targetAmount: number
+  startDate: string // ISO date the challenge started
+  deadline?: string // ISO date to hit the target by (optional)
+  contributions: GoalContribution[]
+}
+
 export type PaymentStatus = 'مدفوع' | 'مستحق' | 'متأخر'
 
 export interface Payment {
@@ -64,4 +85,5 @@ export interface FinanceData {
   investments: Investment[]
   incomes: IncomeEntry[]
   payments: Payment[]
+  goals: IncomeGoal[]
 }

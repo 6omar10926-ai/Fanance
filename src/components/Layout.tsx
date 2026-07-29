@@ -4,6 +4,7 @@ import {
   Wallet,
   TrendingUp,
   Banknote,
+  Target,
   CalendarClock,
   Coins,
   LogOut,
@@ -16,6 +17,7 @@ const navItems = [
   { to: '/expenses', label: 'المصروفات', icon: Wallet },
   { to: '/investments', label: 'الاستثمارات', icon: TrendingUp },
   { to: '/income', label: 'الدخل', icon: Banknote },
+  { to: '/income-goals', label: 'تحديات الدخل', icon: Target },
   { to: '/payments', label: 'المدفوعات', icon: CalendarClock },
 ]
 
