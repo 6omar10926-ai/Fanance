@@ -34,4 +34,30 @@ export const seedData: FinanceData = {
     { id: 'p3', name: 'قسط السيارة', amount: 1200, dueDate: daysAgoISO(10), status: 'متأخر', recurring: true, category: 'تمويل' },
     { id: 'p4', name: 'اشتراك الصالة الرياضية', amount: 200, dueDate: daysAgoISO(15), status: 'مدفوع', recurring: true, category: 'صحة' },
   ],
+  goals: [
+    {
+      id: 'g1',
+      title: 'دخل العقار',
+      source: 'عقار',
+      targetAmount: 10000,
+      startDate: daysAgoISO(40),
+      deadline: daysAgoISO(-50),
+      contributions: [
+        { id: 'g1c1', date: daysAgoISO(35), amount: 3000, note: 'إيجار الشهر الأول' },
+        { id: 'g1c2', date: daysAgoISO(5), amount: 3000, note: 'إيجار الشهر الثاني' },
+      ],
+    },
+    {
+      id: 'g2',
+      title: 'تحدي العمل الحر',
+      source: 'عمل حر',
+      targetAmount: 6000,
+      startDate: daysAgoISO(20),
+      deadline: daysAgoISO(-10),
+      contributions: [
+        { id: 'g2c1', date: daysAgoISO(12), amount: 2500, note: 'مشروع تصميم' },
+        { id: 'g2c2', date: daysAgoISO(3), amount: 3500, note: 'مشروع موقع' },
+      ],
+    },
+  ],
 }

@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard'
 import Expenses from './pages/Expenses'
 import Investments from './pages/Investments'
 import Income from './pages/Income'
+import IncomeGoals from './pages/IncomeGoals'
 import Payments from './pages/Payments'
 
 function NotConfigured() {
@@ -47,6 +48,7 @@ function Gate() {
             <Route path="expenses" element={<Expenses />} />
             <Route path="investments" element={<Investments />} />
             <Route path="income" element={<Income />} />
+            <Route path="income-goals" element={<IncomeGoals />} />
             <Route path="payments" element={<Payments />} />
           </Route>
         </Routes>

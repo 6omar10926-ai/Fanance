@@ -11,7 +11,15 @@ import {
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from './AuthContext'
-import type { Expense, Investment, IncomeEntry, Payment, FinanceData } from '../types'
+import type {
+  Expense,
+  Investment,
+  IncomeEntry,
+  Payment,
+  FinanceData,
+  IncomeGoal,
+  GoalContribution,
+} from '../types'
 import { seedData } from '../lib/seed'
 
 function useUserCollection<T extends { id: string }>(uid: string, name: string): T[] {
@@ -39,6 +47,11 @@ interface DataContextValue extends FinanceData {
   addPayment: (p: Omit<Payment, 'id'>) => void
   removePayment: (id: string) => void
   updatePaymentStatus: (id: string, status: Payment['status']) => void
+  addGoal: (g: Omit<IncomeGoal, 'id'>) => void
+  updateGoal: (id: string, g: Omit<IncomeGoal, 'id'>) => void
+  removeGoal: (id: string) => void
+  addContribution: (goalId: string, c: Omit<GoalContribution, 'id'>) => void
+  removeContribution: (goalId: string, contributionId: string) => void
   loadSampleData: () => Promise<void>
   clearAllData: () => Promise<void>
 }
@@ -53,6 +66,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const investments = useUserCollection<Investment>(uid, 'investments')
   const incomes = useUserCollection<IncomeEntry>(uid, 'incomes')
   const payments = useUserCollection<Payment>(uid, 'payments')
+  const goals = useUserCollection<IncomeGoal>(uid, 'goals')
 
   async function loadSampleData() {
     const batch = writeBatch(db)
@@ -76,16 +90,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
       void id
       batch.set(doc(collection(db, 'users', uid, 'payments')), rest)
     }
+    for (const g of seedData.goals) {
+      const { id, ...rest } = g
+      void id
+      batch.set(doc(collection(db, 'users', uid, 'goals')), rest)
+    }
     await batch.commit()
   }
 
   async function clearAllData() {
     const batch = writeBatch(db)
-    for (const name of ['expenses', 'investments', 'incomes', 'payments']) {
+    for (const name of ['expenses', 'investments', 'incomes', 'payments', 'goals']) {
       const snap = await getDocs(collection(db, 'users', uid, name))
       snap.forEach((d) => batch.delete(d.ref))
     }
     await batch.commit()
+  }
+
+  function addContribution(goalId: string, c: Omit<GoalContribution, 'id'>) {
+    const goal = goals.find((g) => g.id === goalId)
+    if (!goal) return
+    const contribution: GoalContribution = { ...c, id: crypto.randomUUID() }
+    const contributions = [...(goal.contributions ?? []), contribution]
+    void updateDoc(doc(db, 'users', uid, 'goals', goalId), { contributions })
+  }
+
+  function removeContribution(goalId: string, contributionId: string) {
+    const goal = goals.find((g) => g.id === goalId)
+    if (!goal) return
+    const contributions = (goal.contributions ?? []).filter((c) => c.id !== contributionId)
+    void updateDoc(doc(db, 'users', uid, 'goals', goalId), { contributions })
   }
 
   const value: DataContextValue = {
@@ -93,6 +127,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     investments,
     incomes,
     payments,
+    goals,
     addExpense: (e) => void addDoc(collection(db, 'users', uid, 'expenses'), e),
     removeExpense: (id) => void deleteDoc(doc(db, 'users', uid, 'expenses', id)),
     addInvestment: (i) => void addDoc(collection(db, 'users', uid, 'investments'), i),
@@ -103,6 +138,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     addPayment: (p) => void addDoc(collection(db, 'users', uid, 'payments'), p),
     removePayment: (id) => void deleteDoc(doc(db, 'users', uid, 'payments', id)),
     updatePaymentStatus: (id, status) => void updateDoc(doc(db, 'users', uid, 'payments', id), { status }),
+    addGoal: (g) => void addDoc(collection(db, 'users', uid, 'goals'), g),
+    updateGoal: (id, g) => void updateDoc(doc(db, 'users', uid, 'goals', id), g),
+    removeGoal: (id) => void deleteDoc(doc(db, 'users', uid, 'goals', id)),
+    addContribution,
+    removeContribution,
     loadSampleData,
     clearAllData,
   }

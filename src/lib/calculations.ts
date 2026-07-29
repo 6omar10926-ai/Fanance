@@ -1,4 +1,4 @@
-import type { Expense, FinanceData, Investment, IncomeEntry } from '../types'
+import type { Expense, FinanceData, Investment, IncomeEntry, IncomeGoal } from '../types'
 
 export function getMonthlyIncome(incomes: IncomeEntry[]): number {
   return incomes.filter((i) => i.frequency === 'شهري').reduce((s, i) => s + i.amount, 0)
@@ -153,4 +153,25 @@ export function monthlySeries(expenses: Expense[], incomes: IncomeEntry[], month
 export function netWorth(data: FinanceData): number {
   const cash = totalIncomeRecorded(data.incomes) - totalExpenses(data.expenses)
   return cash + totalCurrentValue(data.investments)
+}
+
+export interface GoalProgress {
+  collected: number // total logged so far
+  remaining: number // how much is left to reach the target (>= 0)
+  percent: number // 0..100, capped at 100
+  isComplete: boolean
+  daysLeft: number | null // whole days until deadline, null when no deadline
+  isOverdue: boolean // deadline passed while still incomplete
+}
+
+// Summarize how far along an income challenge is.
+export function goalProgress(goal: IncomeGoal, from: Date = new Date()): GoalProgress {
+  const collected = (goal.contributions ?? []).reduce((s, c) => s + c.amount, 0)
+  const target = goal.targetAmount > 0 ? goal.targetAmount : 0
+  const remaining = Math.max(0, target - collected)
+  const percent = target === 0 ? 0 : Math.min(100, (collected / target) * 100)
+  const isComplete = target > 0 && collected >= target
+  const daysLeft = goal.deadline ? daysUntil(new Date(goal.deadline), from) : null
+  const isOverdue = daysLeft !== null && daysLeft < 0 && !isComplete
+  return { collected, remaining, percent, isComplete, daysLeft, isOverdue }
 }
