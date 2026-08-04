@@ -78,9 +78,18 @@ export function expensesByCategory(expenses: Expense[]): { name: string; value: 
     .sort((a, b) => b.value - a.value)
 }
 
+// Still-open investments (not cashed out yet). Portfolio stats reflect these.
+export function activeInvestments(investments: Investment[]): Investment[] {
+  return investments.filter((i) => !i.closed)
+}
+
+export function closedInvestments(investments: Investment[]): Investment[] {
+  return investments.filter((i) => i.closed)
+}
+
 export function investmentsByType(investments: Investment[]): { name: string; value: number }[] {
   const map = new Map<string, number>()
-  for (const i of investments) {
+  for (const i of activeInvestments(investments)) {
     map.set(i.type, (map.get(i.type) ?? 0) + i.currentValue)
   }
   return [...map.entries()]
@@ -89,17 +98,25 @@ export function investmentsByType(investments: Investment[]): { name: string; va
 }
 
 export function totalInvested(investments: Investment[]): number {
-  return investments.reduce((s, i) => s + i.amountInvested, 0)
+  return activeInvestments(investments).reduce((s, i) => s + i.amountInvested, 0)
 }
 
 export function totalCurrentValue(investments: Investment[]): number {
-  return investments.reduce((s, i) => s + i.currentValue, 0)
+  return activeInvestments(investments).reduce((s, i) => s + i.currentValue, 0)
 }
 
 export function investmentReturnPct(investments: Investment[]): number {
   const invested = totalInvested(investments)
   if (invested === 0) return 0
   return ((totalCurrentValue(investments) - invested) / invested) * 100
+}
+
+// Realized profit/loss from investments that were cashed out.
+export function realizedProfit(investments: Investment[]): number {
+  return closedInvestments(investments).reduce(
+    (s, i) => s + ((i.receivedAmount ?? 0) - i.amountInvested),
+    0,
+  )
 }
 
 export function savingsRate(income: number, expenses: number): number {
