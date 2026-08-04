@@ -11,6 +11,7 @@ import Investments from './pages/Investments'
 import Income from './pages/Income'
 import IncomeGoals from './pages/IncomeGoals'
 import Payments from './pages/Payments'
+import Debts from './pages/Debts'
 
 function NotConfigured() {
   return (
@@ -50,6 +51,7 @@ function Gate() {
             <Route path="income" element={<Income />} />
             <Route path="income-goals" element={<IncomeGoals />} />
             <Route path="payments" element={<Payments />} />
+            <Route path="debts" element={<Debts />} />
           </Route>
         </Routes>
       </HashRouter>
