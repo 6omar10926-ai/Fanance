@@ -17,7 +17,7 @@ export const seedData: FinanceData = {
     { id: 'e7', date: daysAgoISO(20), category: 'تسوق', description: 'ملابس', amount: 350 },
   ],
   investments: [
-    { id: 'i1', name: 'محفظة الأسهم السعودية', type: 'أسهم', platform: 'الراجحي المالية', amountInvested: 15000, currentValue: 17250, date: daysAgoISO(200), notes: 'تداول تاسي' },
+    { id: 'i1', name: 'محفظة الأسهم السعودية', type: 'أسهم', platform: 'الراجحي المالية', amountInvested: 15000, currentValue: 17250, date: daysAgoISO(200), payout: 400, payoutFreq: 'ربع سنوي', notes: 'تداول تاسي' },
     { id: 'i2', name: 'صندوق مؤشر عالمي', type: 'صناديق استثمار', platform: 'دراية المالية', amountInvested: 10000, currentValue: 11100, date: daysAgoISO(150), endDate: daysAgoISO(-215) },
     { id: 'i3', name: 'ذهب عيار 24', type: 'ذهب ومعادن', platform: 'محلي', amountInvested: 5000, currentValue: 5450, date: daysAgoISO(300) },
     { id: 'i4', name: 'وديعة ثابتة', type: 'ودائع بنكية', platform: 'مصرف الإنماء', amountInvested: 20000, currentValue: 20600, date: daysAgoISO(365), endDate: daysAgoISO(-5) },

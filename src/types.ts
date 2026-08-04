@@ -27,6 +27,8 @@ export type InvestmentType =
   | 'ودائع بنكية'
   | 'أخرى'
 
+export type PayoutFrequency = 'شهري' | 'ربع سنوي' | 'سنوي'
+
 export interface Investment {
   id: string
   name: string
@@ -37,6 +39,13 @@ export interface Investment {
   date: string // ISO start date
   endDate?: string // ISO date the investment matures / ends
   notes?: string
+  payout?: number // recurring amount received (dividends / rent)
+  payoutFreq?: PayoutFrequency // how often the payout lands
+  // Set when the investment is cashed out / ended.
+  closed?: boolean
+  receivedAmount?: number // actual amount received on exit
+  closedDate?: string // ISO date it was ended
+  incomeId?: string // linked income entry created on exit (for reopen cleanup)
 }
 
 export type IncomeFrequency = 'شهري' | 'سنوي' | 'مرة واحدة'

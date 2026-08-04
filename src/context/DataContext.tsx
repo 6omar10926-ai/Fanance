@@ -5,6 +5,7 @@ import {
   deleteDoc,
   updateDoc,
   setDoc,
+  deleteField,
   doc,
   onSnapshot,
   writeBatch,
@@ -45,6 +46,8 @@ interface DataContextValue extends FinanceData {
   addInvestment: (i: Omit<Investment, 'id'>) => void
   updateInvestment: (id: string, i: Omit<Investment, 'id'>) => void
   removeInvestment: (id: string) => void
+  closeInvestment: (id: string, receivedAmount: number, closedDate: string, asIncome: boolean) => void
+  reopenInvestment: (id: string) => void
   addIncome: (i: Omit<IncomeEntry, 'id'>) => void
   updateIncome: (id: string, i: Omit<IncomeEntry, 'id'>) => void
   removeIncome: (id: string) => void
@@ -171,6 +174,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await updateDoc(doc(db, 'users', uid, 'debts', debtId), { payments })
   }
 
+  // Cash out an investment: record what was received and optionally book it as
+  // income (linked so reopening can remove it).
+  async function closeInvestment(id: string, receivedAmount: number, closedDate: string, asIncome: boolean) {
+    const inv = investments.find((i) => i.id === id)
+    if (!inv) return
+    const update: Record<string, unknown> = { closed: true, receivedAmount, closedDate }
+    if (asIncome) {
+      const ref = await addDoc(collection(db, 'users', uid, 'incomes'), {
+        date: closedDate,
+        source: `تسييل استثمار: ${inv.name}`,
+        frequency: 'مرة واحدة',
+        amount: receivedAmount,
+      })
+      update.incomeId = ref.id
+    }
+    await updateDoc(doc(db, 'users', uid, 'investments', id), update)
+  }
+
+  async function reopenInvestment(id: string) {
+    const inv = investments.find((i) => i.id === id)
+    if (!inv) return
+    if (inv.incomeId) await deleteDoc(doc(db, 'users', uid, 'incomes', inv.incomeId)).catch(() => {})
+    await updateDoc(doc(db, 'users', uid, 'investments', id), {
+      closed: deleteField(),
+      receivedAmount: deleteField(),
+      closedDate: deleteField(),
+      incomeId: deleteField(),
+    })
+  }
+
   const value: DataContextValue = {
     expenses,
     investments,
@@ -184,6 +217,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // setDoc fully overwrites so cleared optional fields (platform/endDate/notes) are removed.
     updateInvestment: (id, i) => void setDoc(doc(db, 'users', uid, 'investments', id), i),
     removeInvestment: (id) => void deleteDoc(doc(db, 'users', uid, 'investments', id)),
+    closeInvestment: (id, receivedAmount, closedDate, asIncome) =>
+      void closeInvestment(id, receivedAmount, closedDate, asIncome),
+    reopenInvestment: (id) => void reopenInvestment(id),
     addIncome: (i) => void addDoc(collection(db, 'users', uid, 'incomes'), i),
     updateIncome: (id, i) => void updateDoc(doc(db, 'users', uid, 'incomes', id), i),
     removeIncome: (id) => void deleteDoc(doc(db, 'users', uid, 'incomes', id)),
