@@ -60,4 +60,10 @@ export const seedData: FinanceData = {
       ],
     },
   ],
+  debts: [
+    { id: 'd1', direction: 'لي', person: 'خالد', amount: 2000, date: daysAgoISO(25), dueDate: daysAgoISO(-15), settled: false, notes: 'سلفة' },
+    { id: 'd2', direction: 'لي', person: 'محمد', amount: 500, date: daysAgoISO(10), settled: false },
+    { id: 'd3', direction: 'عليّ', person: 'عبدالله', amount: 1500, date: daysAgoISO(40), dueDate: daysAgoISO(-5), settled: false, notes: 'قرض شخصي' },
+    { id: 'd4', direction: 'عليّ', person: 'سالم', amount: 800, date: daysAgoISO(60), settled: true },
+  ],
 }

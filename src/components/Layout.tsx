@@ -6,6 +6,7 @@ import {
   Banknote,
   Target,
   CalendarClock,
+  HandCoins,
   Coins,
   LogOut,
   ShieldCheck,
@@ -19,6 +20,7 @@ const navItems = [
   { to: '/income', label: 'الدخل', icon: Banknote },
   { to: '/income-goals', label: 'تحديات الدخل', icon: Target },
   { to: '/payments', label: 'المدفوعات', icon: CalendarClock },
+  { to: '/debts', label: 'الديون', icon: HandCoins },
 ]
 
 export default function Layout() {

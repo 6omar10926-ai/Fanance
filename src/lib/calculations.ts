@@ -1,4 +1,4 @@
-import type { Expense, FinanceData, Investment, IncomeEntry, IncomeGoal } from '../types'
+import type { Debt, Expense, FinanceData, Investment, IncomeEntry, IncomeGoal } from '../types'
 
 export function getMonthlyIncome(incomes: IncomeEntry[]): number {
   return incomes.filter((i) => i.frequency === 'شهري').reduce((s, i) => s + i.amount, 0)
@@ -150,9 +150,24 @@ export function monthlySeries(expenses: Expense[], incomes: IncomeEntry[], month
   return points
 }
 
+// Outstanding (unsettled) amount others owe me.
+export function totalOwedToMe(debts: Debt[]): number {
+  return debts.filter((d) => !d.settled && d.direction === 'لي').reduce((s, d) => s + d.amount, 0)
+}
+
+// Outstanding (unsettled) amount I owe others.
+export function totalOwedByMe(debts: Debt[]): number {
+  return debts.filter((d) => !d.settled && d.direction === 'عليّ').reduce((s, d) => s + d.amount, 0)
+}
+
+// Net debt position: positive = others owe me more than I owe.
+export function netDebt(debts: Debt[]): number {
+  return totalOwedToMe(debts) - totalOwedByMe(debts)
+}
+
 export function netWorth(data: FinanceData): number {
   const cash = totalIncomeRecorded(data.incomes) - totalExpenses(data.expenses)
-  return cash + totalCurrentValue(data.investments)
+  return cash + totalCurrentValue(data.investments) + netDebt(data.debts ?? [])
 }
 
 export interface GoalProgress {

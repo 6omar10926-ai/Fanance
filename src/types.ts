@@ -80,10 +80,26 @@ export interface Payment {
   category: string
 }
 
+// 'لي' = money others owe me (I lent it out)
+// 'عليّ' = money I owe others (I borrowed it)
+export type DebtDirection = 'لي' | 'عليّ'
+
+export interface Debt {
+  id: string
+  direction: DebtDirection
+  person: string // the other party's name
+  amount: number
+  date: string // ISO date the debt was created
+  dueDate?: string // ISO expected settlement date (optional)
+  settled: boolean // whether it has been paid back
+  notes?: string
+}
+
 export interface FinanceData {
   expenses: Expense[]
   investments: Investment[]
   incomes: IncomeEntry[]
   payments: Payment[]
   goals: IncomeGoal[]
+  debts: Debt[]
 }
