@@ -20,6 +20,7 @@ import type {
   IncomeGoal,
   GoalContribution,
   Debt,
+  DebtPayment,
 } from '../types'
 import { seedData } from '../lib/seed'
 
@@ -55,7 +56,8 @@ interface DataContextValue extends FinanceData {
   removeContribution: (goalId: string, contributionId: string) => void
   addDebt: (d: Omit<Debt, 'id'>) => void
   removeDebt: (id: string) => void
-  setDebtSettled: (id: string, settled: boolean) => void
+  addDebtPayment: (debtId: string, payment: Omit<DebtPayment, 'id' | 'expenseId'>, asExpense: boolean) => void
+  removeDebtPayment: (debtId: string, paymentId: string) => void
   loadSampleData: () => Promise<void>
   clearAllData: () => Promise<void>
 }
@@ -132,6 +134,41 @@ export function DataProvider({ children }: { children: ReactNode }) {
     void updateDoc(doc(db, 'users', uid, 'goals', goalId), { contributions })
   }
 
+  // Log a (possibly partial) payment against a debt. When asExpense is true the
+  // amount is also recorded as a monthly expense (category أقساط) and linked so
+  // it can be removed together with the payment.
+  async function addDebtPayment(
+    debtId: string,
+    payment: Omit<DebtPayment, 'id' | 'expenseId'>,
+    asExpense: boolean,
+  ) {
+    const debt = debts.find((d) => d.id === debtId)
+    if (!debt) return
+    const entry: DebtPayment = { ...payment, id: crypto.randomUUID() }
+    if (asExpense) {
+      const ref = await addDoc(collection(db, 'users', uid, 'expenses'), {
+        date: payment.date,
+        category: 'أقساط',
+        description: `سداد دين: ${debt.person}`,
+        amount: payment.amount,
+      })
+      entry.expenseId = ref.id
+    }
+    const payments = [...(debt.payments ?? []), entry]
+    await updateDoc(doc(db, 'users', uid, 'debts', debtId), { payments })
+  }
+
+  async function removeDebtPayment(debtId: string, paymentId: string) {
+    const debt = debts.find((d) => d.id === debtId)
+    if (!debt) return
+    const target = (debt.payments ?? []).find((p) => p.id === paymentId)
+    if (target?.expenseId) {
+      await deleteDoc(doc(db, 'users', uid, 'expenses', target.expenseId)).catch(() => {})
+    }
+    const payments = (debt.payments ?? []).filter((p) => p.id !== paymentId)
+    await updateDoc(doc(db, 'users', uid, 'debts', debtId), { payments })
+  }
+
   const value: DataContextValue = {
     expenses,
     investments,
@@ -156,7 +193,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     removeContribution,
     addDebt: (d) => void addDoc(collection(db, 'users', uid, 'debts'), d),
     removeDebt: (id) => void deleteDoc(doc(db, 'users', uid, 'debts', id)),
-    setDebtSettled: (id, settled) => void updateDoc(doc(db, 'users', uid, 'debts', id), { settled }),
+    addDebtPayment: (debtId, payment, asExpense) => void addDebtPayment(debtId, payment, asExpense),
+    removeDebtPayment: (debtId, paymentId) => void removeDebtPayment(debtId, paymentId),
     loadSampleData,
     clearAllData,
   }

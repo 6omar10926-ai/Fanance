@@ -150,14 +150,31 @@ export function monthlySeries(expenses: Expense[], incomes: IncomeEntry[], month
   return points
 }
 
-// Outstanding (unsettled) amount others owe me.
-export function totalOwedToMe(debts: Debt[]): number {
-  return debts.filter((d) => !d.settled && d.direction === 'لي').reduce((s, d) => s + d.amount, 0)
+// Total paid so far against a debt (sum of logged payments).
+export function debtPaid(debt: Debt): number {
+  return (debt.payments ?? []).reduce((s, p) => s + p.amount, 0)
 }
 
-// Outstanding (unsettled) amount I owe others.
+// How much is still owed on a debt (never below zero).
+export function debtRemaining(debt: Debt): number {
+  const paid = debtPaid(debt)
+  // Legacy records marked fully settled before partial payments existed.
+  if (debt.settled && paid === 0) return 0
+  return Math.max(0, debt.amount - paid)
+}
+
+export function debtIsSettled(debt: Debt): boolean {
+  return debtRemaining(debt) <= 0
+}
+
+// Outstanding amount others still owe me.
+export function totalOwedToMe(debts: Debt[]): number {
+  return debts.filter((d) => d.direction === 'لي').reduce((s, d) => s + debtRemaining(d), 0)
+}
+
+// Outstanding amount I still owe others.
 export function totalOwedByMe(debts: Debt[]): number {
-  return debts.filter((d) => !d.settled && d.direction === 'عليّ').reduce((s, d) => s + d.amount, 0)
+  return debts.filter((d) => d.direction === 'عليّ').reduce((s, d) => s + debtRemaining(d), 0)
 }
 
 // Net debt position: positive = others owe me more than I owe.

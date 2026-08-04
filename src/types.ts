@@ -7,6 +7,7 @@ export type ExpenseCategory =
   | 'صحة'
   | 'ترفيه'
   | 'تعليم'
+  | 'أقساط'
   | 'أخرى'
 
 export interface Expense {
@@ -84,15 +85,28 @@ export interface Payment {
 // 'عليّ' = money I owe others (I borrowed it)
 export type DebtDirection = 'لي' | 'عليّ'
 
+// A single (possibly partial) payment logged against a debt. When it was
+// counted as an expense too, expenseId links to the created expense so the
+// two stay in sync (deleting the payment removes that expense).
+export interface DebtPayment {
+  id: string
+  date: string // ISO date the payment happened
+  amount: number
+  note?: string
+  expenseId?: string // linked expense doc id, when logged as a monthly expense
+}
+
 export interface Debt {
   id: string
   direction: DebtDirection
   person: string // the other party's name
-  amount: number
+  amount: number // original total of the debt
   date: string // ISO date the debt was created
   dueDate?: string // ISO expected settlement date (optional)
-  settled: boolean // whether it has been paid back
+  installment?: number // optional monthly installment amount (for loans)
+  payments: DebtPayment[] // partial payments / installments logged over time
   notes?: string
+  settled?: boolean // legacy flag from older records; superseded by payments
 }
 
 export interface FinanceData {
