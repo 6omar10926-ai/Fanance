@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
-import { Plus, Trash2, CheckCircle2, Clock, AlertCircle, Repeat, CalendarClock } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Plus, Trash2, CheckCircle2, Clock, AlertCircle, Repeat, CalendarClock, CircleDollarSign, ArrowLeft } from 'lucide-react'
 import { useFinanceData } from '../context/DataContext'
-import type { Payment, PaymentStatus } from '../types'
+import type { Debt, Payment, PaymentStatus } from '../types'
 import PageHeader from '../components/PageHeader'
 import Card from '../components/Card'
 import StatCard from '../components/StatCard'
 import Modal from '../components/Modal'
 import { FormField, TextInput, PrimaryButton } from '../components/FormField'
 import { formatCurrency, formatDate, todayISO } from '../lib/format'
+import { activeInstallments, debtRemaining, nextInstallmentDate } from '../lib/calculations'
 
 const statuses: PaymentStatus[] = ['مستحق', 'مدفوع', 'متأخر']
 
@@ -18,9 +20,19 @@ const statusStyle: Record<PaymentStatus, { badge: string; icon: typeof CheckCirc
 }
 
 export default function Payments() {
-  const { payments, addPayment, removePayment, updatePaymentStatus } = useFinanceData()
+  const { payments, addPayment, removePayment, updatePaymentStatus, debts, addDebtPayment } = useFinanceData()
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<'الكل' | PaymentStatus>('الكل')
+
+  const installments = useMemo(() => activeInstallments(debts), [debts])
+
+  function payInstallment(d: Debt) {
+    const remaining = debtRemaining(d)
+    const amount = Math.min(d.installment ?? 0, remaining)
+    if (amount <= 0) return
+    // Logs against the debt and records it as a monthly expense (category أقساط).
+    addDebtPayment(d.id, { date: todayISO(), amount, note: 'قسط الشهر' }, true)
+  }
 
   const [form, setForm] = useState({
     name: '',
@@ -78,6 +90,53 @@ export default function Payments() {
         <StatCard label="تم دفعها" value={formatCurrency(totalPaid)} icon={CheckCircle2} accent="emerald" />
         <StatCard label="دفعات متكررة" value={String(recurringCount)} icon={Repeat} accent="sky" />
       </div>
+
+      {installments.length > 0 && (
+        <Card className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Repeat className="w-4 h-4 text-orange-400" /> أقساط القروض الشهرية
+            </h3>
+            <Link to="/debts" className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+              إدارة الديون <ArrowLeft className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {installments.map((d) => {
+              const remaining = debtRemaining(d)
+              const amount = Math.min(d.installment ?? 0, remaining)
+              const due = nextInstallmentDate(d)
+              return (
+                <div key={d.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 flex-wrap gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-orange-500/15 text-orange-400 shrink-0">
+                      <Repeat className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-white truncate">{d.person}</p>
+                      <p className="text-[11px] text-slate-500">
+                        القسط القادم {formatDate(due.toISOString())} · متبقٍ {formatCurrency(remaining)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <p className="text-sm font-bold text-white tabular-nums">{formatCurrency(amount)}</p>
+                    <button
+                      onClick={() => payInstallment(d)}
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
+                    >
+                      <CircleDollarSign className="w-3.5 h-3.5" /> سداد القسط
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-[11px] text-slate-500 mt-3">
+            تُسجَّل الأقساط تلقائياً في الديون، وتُخصم قيمة القسط من مصروفات الشهر (فئة: أقساط) عند السداد.
+          </p>
+        </Card>
+      )}
 
       <Card>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">

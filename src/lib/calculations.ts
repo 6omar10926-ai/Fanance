@@ -167,6 +167,21 @@ export function debtIsSettled(debt: Debt): boolean {
   return debtRemaining(debt) <= 0
 }
 
+// Next monthly installment date for a loan, based on the day-of-month it
+// started on. Returns the next occurrence on or after `from`.
+export function nextInstallmentDate(debt: Debt, from: Date = new Date()): Date {
+  const today = dateOnly(from)
+  const day = new Date(debt.date).getDate()
+  let candidate = buildDate(today.getFullYear(), today.getMonth(), day)
+  if (candidate < today) candidate = buildDate(today.getFullYear(), today.getMonth() + 1, day)
+  return candidate
+}
+
+// Active installment loans I owe (has a monthly installment and still unpaid).
+export function activeInstallments(debts: Debt[]): Debt[] {
+  return debts.filter((d) => d.direction === 'عليّ' && !!d.installment && !debtIsSettled(d))
+}
+
 // Outstanding amount others still owe me.
 export function totalOwedToMe(debts: Debt[]): number {
   return debts.filter((d) => d.direction === 'لي').reduce((s, d) => s + debtRemaining(d), 0)
