@@ -10,7 +10,7 @@ import { FormField, TextInput, Select, PrimaryButton } from '../components/FormF
 import { formatCurrency, formatDate, todayISO } from '../lib/format'
 import { totalExpenses, expensesInMonth, expensesByCategory } from '../lib/calculations'
 
-const categories: ExpenseCategory[] = ['طعام وشراب', 'مواصلات', 'سكن', 'فواتير', 'تسوق', 'صحة', 'ترفيه', 'تعليم', 'أخرى']
+const categories: ExpenseCategory[] = ['طعام وشراب', 'مواصلات', 'سكن', 'فواتير', 'تسوق', 'صحة', 'ترفيه', 'تعليم', 'أقساط', 'أخرى']
 
 const categoryColors: Record<string, string> = {
   'طعام وشراب': 'bg-amber-500/15 text-amber-400',
@@ -21,6 +21,7 @@ const categoryColors: Record<string, string> = {
   'صحة': 'bg-emerald-500/15 text-emerald-400',
   'ترفيه': 'bg-indigo-500/15 text-indigo-400',
   'تعليم': 'bg-teal-500/15 text-teal-400',
+  'أقساط': 'bg-orange-500/15 text-orange-400',
   'أخرى': 'bg-slate-500/15 text-slate-400',
 }
 
