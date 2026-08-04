@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, TrendingUp, TrendingDown, Coins, PieChart as PieIcon } from 'lucide-react'
+import { Plus, Trash2, Pencil, TrendingUp, TrendingDown, Coins, PieChart as PieIcon } from 'lucide-react'
 import { useFinanceData } from '../context/DataContext'
 import type { Investment, InvestmentType } from '../types'
 import PageHeader from '../components/PageHeader'
@@ -13,10 +13,11 @@ import { totalInvested, totalCurrentValue, investmentReturnPct } from '../lib/ca
 const types: InvestmentType[] = ['أسهم', 'صناديق استثمار', 'عقار', 'ذهب ومعادن', 'عملات رقمية', 'ودائع بنكية', 'أخرى']
 
 export default function Investments() {
-  const { investments, addInvestment, removeInvestment } = useFinanceData()
+  const { investments, addInvestment, updateInvestment, removeInvestment } = useFinanceData()
   const [open, setOpen] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
 
-  const [form, setForm] = useState({
+  const emptyForm = {
     name: '',
     type: types[0] as InvestmentType,
     platform: '',
@@ -25,7 +26,29 @@ export default function Investments() {
     date: todayISO(),
     endDate: '',
     notes: '',
-  })
+  }
+  const [form, setForm] = useState(emptyForm)
+
+  function openAdd() {
+    setEditId(null)
+    setForm(emptyForm)
+    setOpen(true)
+  }
+
+  function openEdit(inv: Investment) {
+    setEditId(inv.id)
+    setForm({
+      name: inv.name,
+      type: inv.type,
+      platform: inv.platform ?? '',
+      amountInvested: String(inv.amountInvested),
+      currentValue: String(inv.currentValue),
+      date: inv.date,
+      endDate: inv.endDate ?? '',
+      notes: inv.notes ?? '',
+    })
+    setOpen(true)
+  }
 
   const invested = totalInvested(investments)
   const currentValue = totalCurrentValue(investments)
@@ -47,8 +70,13 @@ export default function Investments() {
       ...(form.endDate ? { endDate: form.endDate } : {}),
       ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
     }
-    addInvestment(payload)
-    setForm({ name: '', type: types[0], platform: '', amountInvested: '', currentValue: '', date: todayISO(), endDate: '', notes: '' })
+    if (editId) {
+      updateInvestment(editId, payload)
+    } else {
+      addInvestment(payload)
+    }
+    setForm(emptyForm)
+    setEditId(null)
     setOpen(false)
   }
 
@@ -61,7 +89,7 @@ export default function Investments() {
         subtitle="تابع محفظتك الاستثمارية وعوائدها"
         action={
           <button
-            onClick={() => setOpen(true)}
+            onClick={openAdd}
             className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-[#06110c] font-bold px-4 py-2.5 rounded-xl text-sm transition-colors"
           >
             <Plus className="w-4 h-4" /> إضافة استثمار
@@ -123,13 +151,22 @@ export default function Investments() {
                         {inv.endDate ? formatDate(inv.endDate) : <span className="text-slate-600">—</span>}
                       </td>
                       <td className="px-2 py-3 text-left">
-                        <button
-                          onClick={() => removeInvestment(inv.id)}
-                          className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                          aria-label="حذف"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1 justify-end">
+                          <button
+                            onClick={() => openEdit(inv)}
+                            className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+                            aria-label="تعديل"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => removeInvestment(inv.id)}
+                            className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                            aria-label="حذف"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -140,7 +177,7 @@ export default function Investments() {
         )}
       </Card>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="إضافة استثمار جديد">
+      <Modal open={open} onClose={() => setOpen(false)} title={editId ? 'تعديل الاستثمار' : 'إضافة استثمار جديد'}>
         <form onSubmit={handleSubmit}>
           <FormField label="اسم الاستثمار">
             <TextInput
@@ -201,7 +238,7 @@ export default function Investments() {
           <FormField label="ملاحظات (اختياري)">
             <TextInput value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="ملاحظات إضافية" />
           </FormField>
-          <PrimaryButton type="submit">إضافة الاستثمار</PrimaryButton>
+          <PrimaryButton type="submit">{editId ? 'حفظ التعديلات' : 'إضافة الاستثمار'}</PrimaryButton>
         </form>
       </Modal>
     </div>

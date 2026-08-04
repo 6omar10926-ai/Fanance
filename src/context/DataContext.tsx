@@ -4,6 +4,7 @@ import {
   addDoc,
   deleteDoc,
   updateDoc,
+  setDoc,
   doc,
   onSnapshot,
   writeBatch,
@@ -42,6 +43,7 @@ interface DataContextValue extends FinanceData {
   addExpense: (e: Omit<Expense, 'id'>) => void
   removeExpense: (id: string) => void
   addInvestment: (i: Omit<Investment, 'id'>) => void
+  updateInvestment: (id: string, i: Omit<Investment, 'id'>) => void
   removeInvestment: (id: string) => void
   addIncome: (i: Omit<IncomeEntry, 'id'>) => void
   updateIncome: (id: string, i: Omit<IncomeEntry, 'id'>) => void
@@ -179,6 +181,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     addExpense: (e) => void addDoc(collection(db, 'users', uid, 'expenses'), e),
     removeExpense: (id) => void deleteDoc(doc(db, 'users', uid, 'expenses', id)),
     addInvestment: (i) => void addDoc(collection(db, 'users', uid, 'investments'), i),
+    // setDoc fully overwrites so cleared optional fields (platform/endDate/notes) are removed.
+    updateInvestment: (id, i) => void setDoc(doc(db, 'users', uid, 'investments', id), i),
     removeInvestment: (id) => void deleteDoc(doc(db, 'users', uid, 'investments', id)),
     addIncome: (i) => void addDoc(collection(db, 'users', uid, 'incomes'), i),
     updateIncome: (id, i) => void updateDoc(doc(db, 'users', uid, 'incomes', id), i),
