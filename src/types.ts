@@ -31,9 +31,11 @@ export interface Investment {
   id: string
   name: string
   type: InvestmentType
-  amountInvested: number
-  currentValue: number
-  date: string // ISO date acquired
+  platform?: string // the platform/broker the investment is held on
+  amountInvested: number // capital put in (رأس المال)
+  currentValue: number // expected total value (المبلغ الإجمالي المتوقع)
+  date: string // ISO start date
+  endDate?: string // ISO date the investment matures / ends
   notes?: string
 }
 
