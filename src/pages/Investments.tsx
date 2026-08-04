@@ -19,9 +19,11 @@ export default function Investments() {
   const [form, setForm] = useState({
     name: '',
     type: types[0] as InvestmentType,
+    platform: '',
     amountInvested: '',
     currentValue: '',
     date: todayISO(),
+    endDate: '',
     notes: '',
   })
 
@@ -41,10 +43,12 @@ export default function Investments() {
       amountInvested,
       currentValue: currentVal,
       date: form.date,
-      notes: form.notes.trim() || undefined,
+      ...(form.platform.trim() ? { platform: form.platform.trim() } : {}),
+      ...(form.endDate ? { endDate: form.endDate } : {}),
+      ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
     }
     addInvestment(payload)
-    setForm({ name: '', type: types[0], amountInvested: '', currentValue: '', date: todayISO(), notes: '' })
+    setForm({ name: '', type: types[0], platform: '', amountInvested: '', currentValue: '', date: todayISO(), endDate: '', notes: '' })
     setOpen(false)
   }
 
@@ -66,15 +70,15 @@ export default function Investments() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="رأس المال المستثمر" value={formatCurrency(invested)} icon={Coins} accent="sky" />
-        <StatCard label="القيمة الحالية" value={formatCurrency(currentValue)} icon={PieIcon} accent="violet" />
+        <StatCard label="المبلغ المستثمر (رأس المال)" value={formatCurrency(invested)} icon={Coins} accent="sky" />
+        <StatCard label="الإجمالي المتوقع" value={formatCurrency(currentValue)} icon={PieIcon} accent="violet" />
         <StatCard
-          label="الأرباح / الخسائر"
+          label="الربح المتوقع"
           value={formatCurrency(gain)}
           icon={gain >= 0 ? TrendingUp : TrendingDown}
           accent={gain >= 0 ? 'emerald' : 'rose'}
         />
-        <StatCard label="نسبة العائد الإجمالي" value={formatPercent(roi)} icon={gain >= 0 ? TrendingUp : TrendingDown} accent={gain >= 0 ? 'emerald' : 'rose'} />
+        <StatCard label="نسبة العائد المتوقع" value={formatPercent(roi)} icon={gain >= 0 ? TrendingUp : TrendingDown} accent={gain >= 0 ? 'emerald' : 'rose'} />
       </div>
 
       <Card>
@@ -83,14 +87,16 @@ export default function Investments() {
           <p className="text-sm text-slate-500 text-center py-12">لا توجد استثمارات مسجلة بعد</p>
         ) : (
           <div className="overflow-x-auto -mx-2">
-            <table className="w-full text-sm min-w-[640px]">
+            <table className="w-full text-sm min-w-[760px]">
               <thead>
                 <tr className="text-slate-500 text-[11px] border-b border-white/5">
                   <th className="text-start font-medium px-2 pb-3">الاسم</th>
                   <th className="text-start font-medium px-2 pb-3">النوع</th>
-                  <th className="text-start font-medium px-2 pb-3">المستثمر</th>
-                  <th className="text-start font-medium px-2 pb-3">القيمة الحالية</th>
-                  <th className="text-start font-medium px-2 pb-3">العائد</th>
+                  <th className="text-start font-medium px-2 pb-3">المنصة</th>
+                  <th className="text-start font-medium px-2 pb-3">رأس المال</th>
+                  <th className="text-start font-medium px-2 pb-3">الإجمالي المتوقع</th>
+                  <th className="text-start font-medium px-2 pb-3">العائد المتوقع</th>
+                  <th className="text-start font-medium px-2 pb-3">الانتهاء</th>
                   <th className="text-start font-medium px-2 pb-3"></th>
                 </tr>
               </thead>
@@ -107,10 +113,14 @@ export default function Investments() {
                       <td className="px-2 py-3">
                         <span className="text-[11px] font-semibold px-2 py-1 rounded-lg bg-white/5 text-slate-300">{inv.type}</span>
                       </td>
+                      <td className="px-2 py-3 text-slate-300">{inv.platform || <span className="text-slate-600">—</span>}</td>
                       <td className="px-2 py-3 tabular-nums text-slate-300">{formatCurrency(inv.amountInvested)}</td>
                       <td className="px-2 py-3 tabular-nums font-bold text-white">{formatCurrency(inv.currentValue)}</td>
                       <td className="px-2 py-3">
                         <span className={`font-bold tabular-nums ${invRoi >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{formatPercent(invRoi)}</span>
+                      </td>
+                      <td className="px-2 py-3 text-slate-300 text-[11px]">
+                        {inv.endDate ? formatDate(inv.endDate) : <span className="text-slate-600">—</span>}
                       </td>
                       <td className="px-2 py-3 text-left">
                         <button
@@ -149,8 +159,15 @@ export default function Investments() {
               ))}
             </Select>
           </FormField>
+          <FormField label="منصة الاستثمار (اختياري)">
+            <TextInput
+              value={form.platform}
+              onChange={(e) => setForm((f) => ({ ...f, platform: e.target.value }))}
+              placeholder="مثال: الراجحي المالية، Binance"
+            />
+          </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="المبلغ المستثمر">
+            <FormField label="المبلغ المستثمر (رأس المال)">
               <TextInput
                 type="number"
                 min="0"
@@ -161,7 +178,7 @@ export default function Investments() {
                 required
               />
             </FormField>
-            <FormField label="القيمة الحالية">
+            <FormField label="المبلغ الإجمالي المتوقع">
               <TextInput
                 type="number"
                 min="0"
@@ -173,9 +190,14 @@ export default function Investments() {
               />
             </FormField>
           </div>
-          <FormField label="تاريخ الاستحواذ">
-            <TextInput type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} required />
-          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="تاريخ بداية الاستثمار">
+              <TextInput type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} required />
+            </FormField>
+            <FormField label="تاريخ انتهاء الاستثمار (اختياري)">
+              <TextInput type="date" value={form.endDate} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} />
+            </FormField>
+          </div>
           <FormField label="ملاحظات (اختياري)">
             <TextInput value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="ملاحظات إضافية" />
           </FormField>
